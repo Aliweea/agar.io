@@ -6,32 +6,31 @@ var global = require('./global');
 
 class Canvas {
     constructor(params) {
-        this.directionLock = false;
         this.target = global.target;
-        this.reenviar  = true;
         this.socket = global.socket;
-        this.directions = [];
-        var self = this;
+
+        this.cv = document.getElementById('cvs');
+        this.cv.width = global.screenWidth;
+        this.cv.heigth = global.screenHeight;
+        this.cv.addEventListener("mousemove", this.onMouseMove, false);
+        this.cv.addEventListener("mouseout", this.onMouseOut, false);
+        this.cv.parent =  this;
     }
 
-    directionDown(event){
-        var key = event.which || event.keyCode;
-        var self = this.parent;
-        if(self.directional(key)){
-            self.directionLock = true;
+    onMouseMove(mouse) {
+        this.parent.target.x = mouse.clientX - this.width/2;
+        this.parent.target.y = mouse.clientY - this.height/2;
+        global.target = this.target;
 
-        }
     }
 
-    directional(key) {
-        return this.horizontal(key) || this.vertical(key);
+    onMouseOut() {
+
     }
 
-    horizontal(key) {
-        return key == global.KEY_LEFT || key == global.KEY_RIGHT;
-    }
 
-    vertical(key) {
-        return key == global.KEY_DOWN || key == global.KEY_UP;
-    }
+
+
 }
+
+module.exports = Canvas;
