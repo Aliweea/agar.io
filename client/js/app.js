@@ -129,7 +129,7 @@ function drawPlayers(order) {
             y: cellCurrent.y - start.y
         };
 
-        for (var i=0; i<points; i++) {
+        for (let i=0; i<points; i++) {
             x = cellCurrent.radius * Math.cos(global.spin) + circle.x;
             y = cellCurrent.radius * Math.sin(global.spin) + circle.y;
 

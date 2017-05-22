@@ -81,7 +81,7 @@ io.on("connection", function (socket) {
       x: position.x,
       y: position.y,
       radius: radius
-  }]
+  }];
 
 
   var currentPlayer = {
@@ -105,7 +105,7 @@ io.on("connection", function (socket) {
       if(target.x !== currentPlayer.x || target.y !== currentPlayer.y) {
           currentPlayer.target = target;
       }
-  })
+  });
 
 
 
@@ -197,7 +197,7 @@ function sendUpdate() {
                                 massTotal: Math.round(f.massTotal),
                                 hue: f.hue,
                                 name: f.name
-                        }
+                        };
                     }
                     else {
                         return {
@@ -213,7 +213,7 @@ function sendUpdate() {
                 }
             }
 
-        })
+        });
         sockets[u.id].emit("serverTellPlayerMove", visibleCells,[],[],[]);
 
     });
