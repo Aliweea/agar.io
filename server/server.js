@@ -3,7 +3,12 @@ var app     = express();
 var http    = require("http").Server(app);
 var io      = require("socket.io")(http);
 
-var config  = require("./config.json");
+var config  = {
+    port: 3000,
+    gameWidth: 5000,
+    gameHeight: 5000,
+    defaultMass: 30
+};
 var SAT = require("sat");
 var V = SAT.Vector;
 var C = SAT.Circle;
@@ -71,11 +76,11 @@ function uniformPosition(points, radius) {
 io.on("connection", function (socket) {
   console.log("Somebody connected!");
 
-  var type = socket.handshake.query.type;
+  var type = "player";
 
   var radius = massToRadius(defaultMass);
   var position = uniformPosition(users, radius);
-
+  console.log(radius);
   var cells = [{
       mass: defaultMass,
       x: position.x,
@@ -100,17 +105,56 @@ io.on("connection", function (socket) {
       lastHeartbeat: new Date().getTime(),
   };
 
+  console.log(socket.id);
   socket.on("0", function (target) {
       currentPlayer.lastHeartbeat = new Date().getTime();
       if(target.x !== currentPlayer.x || target.y !== currentPlayer.y) {
           currentPlayer.target = target;
       }
   });
+  socket.on("gotit", function (player) {
+      sockets[player.id] = socket;
+      console.log("gotit"+ player.id);
 
+      let radius = massToRadius( config.defaultMass);
+      let position = randomPosition(radius);
+      console.log(position.x);
+      console.log(position.y);
+
+      player.x = position.x;
+      player.y = position.y;
+      player.target.x = 0;
+      player.target.y = 0;
+      if(true) {
+          player.cells = [{
+              mass:  config.defaultMass,
+              x: position.x,
+              y: position.y,
+              radius: radius
+          }];
+          player.massTotal = config.defaultMass;
+      }
+      else {
+          player.cells = [];
+          player.massTotal = 30;
+      }
+      player.hue = Math.round(Math.random() * 360);
+      currentPlayer = player;
+      currentPlayer.lastHeartbeat = new Date().getTime();
+      users.push(currentPlayer);
+
+  });
 
 
 });
 
+log = (function () {
+    var log = Math.log;
+    return function (n, base) {
+        return log(n) / (base ? log(base) : 1);
+    };
+})();
+var initMassLog = log(config.defaultMass, 4.5);
 
 function movePlayer(player) {
     var x = 0, y = 0;
@@ -124,7 +168,7 @@ function movePlayer(player) {
         var deg = Math.atan2(target.y, target.x);
         var slowDown = 1;
         if(player.cells[i].speed <= 6.25) {
-            slowDown = util.log(player.cells[i].mass, c.slowBase) - initMassLog + 1;
+            slowDown = log(player.cells[i].mass, 4.5) - initMassLog + 1;
         }
 
         var deltaY = player.cells[i].speed * Math.sin(deg)/ slowDown;
@@ -146,11 +190,11 @@ function movePlayer(player) {
 
         if(player.cells.length > i) {
             var borderCalc = player.cells[i].radius / 3;
-            if (player.cells[i].x > c.gameWidth - borderCalc) {
-                player.cells[i].x = c.gameWidth - borderCalc;
+            if (player.cells[i].x > config.gameWidth - borderCalc) {
+                player.cells[i].x = config.gameWidth - borderCalc;
             }
-            if (player.cells[i].y > c.gameHeight - borderCalc) {
-                player.cells[i].y = c.gameHeight - borderCalc;
+            if (player.cells[i].y > config.gameHeight - borderCalc) {
+                player.cells[i].y = config.gameHeight - borderCalc;
             }
             if (player.cells[i].x < borderCalc) {
                 player.cells[i].x = borderCalc;
@@ -171,6 +215,7 @@ function sendUpdate() {
     users.forEach(function (u) {
         u.x = u.x || config.gameWidth/2;
         u.y = u.y || config.gameHeight/2;
+        // console.log(u.id);
 
         var visibleFood = food.map(function (f) {
             if ( f.x > u.x - u.screenWidth/2 - 20 &&
@@ -184,6 +229,12 @@ function sendUpdate() {
         var visibleCells = users.map(function (f) {
             for (let i = 0; i < f.cells.length; i++) {
                 // 调整参数
+                // console.log(u.screenHeight);
+                // console.log(u.screenWidth);
+                // console.log(f.cells[i].x);
+                // console.log(f.cells[i].radius);
+                // console.log(u.x);
+
                 if(f.cells[i].x + f.cells[i].radius - u.x > -u.screenWidth/2 &&
                 f.cells[i].x - f.cells[i].radius -u.x < u.screenWidth/2 &&
                 f.cells[i].y + f.cells[i].radius - u.y > -u.screenHeight/2 &&
@@ -213,7 +264,10 @@ function sendUpdate() {
                 }
             }
 
+        }).filter(function (f) {
+            return f;
         });
+        // console.log(visibleCells.length);
         sockets[u.id].emit("serverTellPlayerMove", visibleCells,[],[],[]);
 
     });
