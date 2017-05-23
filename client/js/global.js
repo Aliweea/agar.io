@@ -18,12 +18,13 @@ module.exports = {
     mobile: false,
     foodSides: 10,
     virusSides: 20,
+    defaultMass: 30,
 
     // Canvas
     screenWidth: window.innerWidth,
     screenHeight: window.innerHeight,
-    gameWidth: 0,
-    gameHeight: 0,
+    gameWidth: 5000,
+    gameHeight: 5000,
     xoffset: -0,
     yoffset: -0,
     gameStart: false,
