@@ -71,7 +71,11 @@ function setupSocket(socket) {
             temp.push(userData[j]);
         }
         users = temp;
-        foods = foodsList;
+        foods = foodsList.map(function (f) {
+            f.x -= offsetx;
+            f.y -= offsety;
+            return f;
+        });
         viruses = virusList;
         fireFood = massList;
     });
@@ -116,6 +120,12 @@ function drawUser() {
     });
 }
 
+function drawFoods() {
+    foods.forEach(function (f) {
+        drawCircle(f.x, f.y, f.radius,10, f.color);
+    });
+}
+
 
 window.requestAnimFrame = (function() {
     return  window.requestAnimationFrame       ||
@@ -138,6 +148,9 @@ function animloop() {
 }
 
 function gameLoop() {
+    graph.fillStyle = global.backgroundColor;
+    graph.fillRect(0, 0, global.screenWidth, global.screenHeight);
     drawUser();
+    drawFoods();
     socket.emit('0', global.target);
 }
