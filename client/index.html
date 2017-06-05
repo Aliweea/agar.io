@@ -1,16 +1,36 @@
 <!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Your Game</title>
+    <head>
+        <meta charset="UTF-8">
+        <title>Your Game</title>
 
-    <link rel="stylesheet" href="/css/main.css" />
-</head>
-<body >
-<canvas tabindex="1" id="cvs" width="1920" height="1080"></canvas>
+        <link rel="stylesheet" href="/css/main.css" />
+    </head>
+    <body>
+        <div id="gameAreaWrapper">
+            <div id="status"><span class="title">Leaderboard</span></div>
+            <div class="chatbox" id="chatbox">
+                <ul id="chatList" class="chat-list"></ul>
+                <input id="chatInput" type="text" class="chat-input" placeholder="Chat here..." maxlength="35" />
+            </div>
+            <div id="mobile">
+                <input type="image" id="split" class="split" src="img/split.png" alt="splitBtn">
+                <input type="image" id="feed" class="feed" src="img/feed.png" alt="feedBtn">
+            </div>
+            <canvas tabindex="1" id="cvs"></canvas>
+        </div>
+        <div id="startMenuWrapper">
+            <div id="startMenu">
+                <p>Open Agar</p>
+                <input type="text" tabindex="0" autofocus placeholder="Enter your name here" id="playerNameInput" maxlength="25" />
+                <b class="input-error">Nick must be alphanumeric characters only!</b>
+                <br />
+                <button id="startButton">Play</button>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="js/app.js"></script>
+            </div>
+        </div>
 
-</body>
+        <script src="https://cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+        <script src="js/app.js"></script>
+    </body>
 </html>

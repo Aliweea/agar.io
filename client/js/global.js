@@ -18,7 +18,6 @@ module.exports = {
     mobile: false,
     foodSides: 10,
     virusSides: 20,
-    defaultMass: 30,
 
     // Canvas
     screenWidth: window.innerWidth,
