@@ -1,17 +1,14 @@
 /**
  * Created by kanxuan on 2017/5/10.
  */
+
 module.exports = {
-    // Keys and other mathematical constants
-    KEY_ESC: 27,
+
     KEY_ENTER: 13,
     KEY_CHAT: 13,
-    KEY_FIREFOOD: 119,
+    KEY_FIREFOOD: 122,
     KEY_SPLIT: 32,
-    KEY_LEFT: 37,
-    KEY_UP: 38,
-    KEY_RIGHT: 39,
-    KEY_DOWN: 40,
+
     borderDraw: false,
     spin: -Math.PI,
     enemySpin: -Math.PI,
@@ -19,7 +16,6 @@ module.exports = {
     foodSides: 10,
     virusSides: 20,
 
-    // Canvas
     screenWidth: window.innerWidth,
     screenHeight: window.innerHeight,
     gameWidth: 5000,
@@ -29,7 +25,6 @@ module.exports = {
     gameStart: false,
     disconnected: false,
     died: false,
-    kicked: false,
     continuity: false,
     startPingTime: 0,
     toggleMassState: 0,

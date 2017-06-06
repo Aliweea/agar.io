@@ -9,7 +9,6 @@ var global = require('./global');
 
 var playerNameInput = document.getElementById('playerNameInput');
 var socket;
-var reason;
 
 
 // 配适移动端
@@ -34,7 +33,6 @@ function startGame(type) {
         animloop();
     socket.emit('respawn');
     window.chat.socket = socket;
-    window.chat.registerFunctions();
     window.canvas.socket = socket;
     global.socket = socket;
 }
@@ -100,7 +98,7 @@ $( "#split" ).click(function() {
     window.canvas.reenviar = false;
 });
 
-// socket stuff.
+// 初始化socket
 function setupSocket(socket) {
 
     socket.on('disconnect', function () {
@@ -108,7 +106,7 @@ function setupSocket(socket) {
         global.disconnected = true;
     });
 
-    // Handle connection.
+    // 后端重启游戏
     socket.on('welcome', function (playerSettings) {
         player = playerSettings;
         player.name = global.playerName;
@@ -134,15 +132,15 @@ function setupSocket(socket) {
     });
 
     socket.on('playerDied', function (data) {
-        window.chat.addSystemLine('{GAME} - <b>' + data.name + '</b> was eaten.');
+        window.chat.addSystemLine('玩家 <b>' + data.name + '</b> 被吃了.');
     });
 
     socket.on('playerDisconnect', function (data) {
-        window.chat.addSystemLine('{GAME} - <b>' + data.name + '</b> disconnected.');
+        window.chat.addSystemLine('玩家 <b>' + data.name + '</b> 断开了连接.');
     });
 
     socket.on('playerJoin', function (data) {
-        window.chat.addSystemLine('{GAME} - <b>' + data.name + '</b> joined.');
+        window.chat.addSystemLine('玩家 <b>' + data.name + '</b> 加入了游戏');
     });
 
     socket.on('leaderboard', function (data) {
@@ -164,12 +162,12 @@ function setupSocket(socket) {
         window.chat.addSystemLine(data);
     });
 
-    // Chat.
+
     socket.on('serverSendPlayerChat', function (data) {
         window.chat.addChatLine(data.sender, data.message, false);
     });
 
-    // Handle movement.
+    // 后端传给客户端数据
     socket.on('serverTellPlayerMove', function (userData, foodsList, massList, virusList) {
         var playerData;
         for(var i =0; i< userData.length; i++) {
@@ -196,7 +194,7 @@ function setupSocket(socket) {
         fireFood = massList;
     });
 
-    // Death.
+    // 玩家挂了执行
     socket.on('RIP', function () {
         global.gameStart = false;
         global.died = true;
@@ -209,13 +207,6 @@ function setupSocket(socket) {
                 global.animLoopHandle = undefined;
             }
         }, 2500);
-    });
-
-    socket.on('kick', function (data) {
-        global.gameStart = false;
-        reason = data;
-        global.kicked = true;
-        socket.close();
     });
 
     socket.on('virusSplit', function (virusCell) {
@@ -320,10 +311,10 @@ function drawPlayers(order) {
             xstore[i] = x;
             ystore[i] = y;
         }
-        /*if (wiggle >= player.radius/ 3) inc = -1;
-         *if (wiggle <= player.radius / -3) inc = +1;
-         *wiggle += inc;
-         */
+        // if (wiggle >= player.radius/ 3) inc = -1;
+        //  if (wiggle <= player.radius / -3) inc = +1;
+        //  wiggle += inc;
+
         for (i = 0; i < points; ++i) {
             if (i === 0) {
                 graph.beginPath();
@@ -398,7 +389,7 @@ function drawborder() {
     graph.lineWidth = 1;
     graph.strokeStyle = playerConfig.borderColor;
 
-    // Left-vertical.
+    // 碰到左边垂直边框
     if (player.x <= global.screenWidth/2) {
         graph.beginPath();
         graph.moveTo(global.screenWidth/2 - player.x, 0 ? player.y > global.screenHeight/2 : global.screenHeight/2 - player.y);
@@ -407,7 +398,7 @@ function drawborder() {
         graph.stroke();
     }
 
-    // Top-horizontal.
+    //  碰到上方水平边框
     if (player.y <= global.screenHeight/2) {
         graph.beginPath();
         graph.moveTo(0 ? player.x > global.screenWidth/2 : global.screenWidth/2 - player.x, global.screenHeight/2 - player.y);
@@ -416,7 +407,7 @@ function drawborder() {
         graph.stroke();
     }
 
-    // Right-vertical.
+    // 碰到右边垂直边框
     if (global.gameWidth - player.x <= global.screenWidth/2) {
         graph.beginPath();
         graph.moveTo(global.gameWidth + global.screenWidth/2 - player.x,
@@ -427,7 +418,7 @@ function drawborder() {
         graph.stroke();
     }
 
-    // Bottom-horizontal.
+    //  碰到下方水平边框
     if (global.gameHeight - player.y <= global.screenHeight/2) {
         graph.beginPath();
         graph.moveTo(global.gameWidth + global.screenWidth/2 - player.x,
@@ -497,7 +488,7 @@ function gameLoop() {
             });
 
             drawPlayers(orderMass);
-            socket.emit('0', window.canvas.target); // playerSendTarget "Heartbeat".
+            socket.emit('0', window.canvas.target);
 
         } else {
             graph.fillStyle = '#333333';
@@ -515,18 +506,6 @@ function gameLoop() {
         graph.textAlign = 'center';
         graph.fillStyle = '#FFFFFF';
         graph.font = 'bold 30px sans-serif';
-        if (global.kicked) {
-            if (reason !== '') {
-                graph.fillText('You were kicked for:', global.screenWidth / 2, global.screenHeight / 2 - 20);
-                graph.fillText(reason, global.screenWidth / 2, global.screenHeight / 2 + 20);
-            }
-            else {
-                graph.fillText('You were kicked!', global.screenWidth / 2, global.screenHeight / 2);
-            }
-        }
-        else {
-            graph.fillText('Disconnected!', global.screenWidth / 2, global.screenHeight / 2);
-        }
     }
 }
 

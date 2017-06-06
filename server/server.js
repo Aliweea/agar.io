@@ -37,18 +37,14 @@ var config  = {
     maxHeartbeatInterval: 5000,
     foodUniformDisposition: true,
     virusUniformDisposition: false,
-    newPlayerInitialPosition:  "farthest" ,
     massLossRate : 1,
     minMassLoss : 50,
     mergeTimer : 15,
 };
 
-// Import utilities.
 var util = require('./util');
 
-// Import quadtree.
 var quadtree = require('simple-quadtree');
-
 
 var tree = quadtree(0, 0, config.gameWidth, config.gameHeight);
 
@@ -73,7 +69,7 @@ function addFood(toAdd) {
     while (toAdd--) {
         var position = config.foodUniformDisposition ? util.uniformPosition(food, radius) : util.randomPosition(radius);
         food.push({
-            // Make IDs unique.
+            // 设置唯一id
             id: new Date().getTime() + '' + food.length >>> 0,
             x: position.x,
             y: position.y,
@@ -139,7 +135,7 @@ function movePlayer(player) {
         if (!isNaN(deltaX)) {
             player.cells[i].x += deltaX;
         }
-        // Find best solution.
+        // 当有多个球球时寻找合适排列
         for (var j = 0; j < player.cells.length; j++) {
             if (j != i && player.cells[i] !== undefined) {
                 var distance = Math.sqrt(Math.pow(player.cells[j].y - player.cells[i].y, 2) + Math.pow(player.cells[j].x - player.cells[i].x, 2));
@@ -218,6 +214,8 @@ function moveMass(mass) {
     }
 }
 
+
+// 当食物不够的时候进行补充，食物多的时候进行减少
 function balanceMass() {
     var totalMass = food.length * config.foodMass + users.map(function (u) {
         return u.massTotal;
@@ -232,11 +230,8 @@ function balanceMass() {
     var foodToRemove = -Math.max(foodDiff, maxFoodDiff);
 
     if (foodToAdd > 0) {
-        //console.log('Adding ' + foodToAdd + ' food!');
         addFood(foodToAdd);
-        //console.log('Mass rebalanced!');
     } else if (foodToRemove > 0) {
-        //console.log('Removing ' + foodToRemove + ' foodl!');
         removeFood(foodToRemove);
     }
 
@@ -248,11 +243,11 @@ function balanceMass() {
 }
 
 io.on('connection', function (socket) {
-    console.log('A user connected!', socket.handshake.query.type);
+    console.log('用户连接', socket.handshake.query.type);
 
     var type = socket.handshake.query.type;
     var radius = util.massToRadius (config.defaultPlayerMass);
-    var position = config.newPlayerInitialPosition == 'farthest' ? util.uniformPosition(users, radius) : util.randomPosition(radius);
+    var position = util.uniformPosition(users, radius);
 
     var cells = [];
     var massTotal = 0;
@@ -284,20 +279,17 @@ io.on('connection', function (socket) {
     };
 
     socket.on('gotit', function (player) {
-        console.log('Player ' + player.name + ' connecting!');
+        console.log('用户 ' + player.name + ' 连接!');
 
         if (util.findIndex(users, player.id) > -1) {
-            console.log('Player ID is already connected, kicking.');
-            socket.disconnect();
-        } else if (!util.validNick(player.name)) {
-            socket.emit('kick', 'Invalid username.');
+            console.log('已经连接');
             socket.disconnect();
         } else {
-            console.log('Player ' + player.name + ' connected!');
+            console.log('用户 ' + player.name + ' 连接!');
             sockets[player.id] = socket;
 
             var radius = util.massToRadius (config.defaultPlayerMass);
-            var position = config.newPlayerInitialPosition == 'farthest' ? util.uniformPosition(users, radius) : util.randomPosition(radius);
+            var position = util.uniformPosition(users, radius);
 
             player.x = position.x;
             player.y = position.y;
@@ -326,7 +318,6 @@ io.on('connection', function (socket) {
                 gameWidth: config.gameWidth,
                 gameHeight: config.gameHeight
             });
-            console.log('Total players: ' + users.length);
         }
     });
 
@@ -339,12 +330,11 @@ io.on('connection', function (socket) {
     socket.on('respawn', function () {
         if (util.findIndex(users, currentPlayer.id) > -1) users.splice(util.findIndex(users, currentPlayer.id), 1);
         socket.emit('welcome', currentPlayer);
-        console.log(' User ' + currentPlayer.name + ' respawned!');
     });
 
     socket.on('disconnect', function () {
         if (util.findIndex(users, currentPlayer.id) > -1) users.splice(util.findIndex(users, currentPlayer.id), 1);
-        console.log(' User ' + currentPlayer.name + ' disconnected!');
+        console.log('用户 ' + currentPlayer.name + ' 断开连接');
 
         socket.broadcast.emit('playerDisconnect', { name: currentPlayer.name });
     });
@@ -358,58 +348,8 @@ io.on('connection', function (socket) {
         socket.broadcast.emit('serverSendPlayerChat', { sender: _sender, message: _message.substring(0, 35) });
     });
 
-    socket.on('pass', function (data) {
-        if (data[0] === config.adminPass) {
-            console.log('[ADMIN] ' + currentPlayer.name + ' just logged in as an admin!');
-            socket.emit('serverMSG', 'Welcome back ' + currentPlayer.name);
-            socket.broadcast.emit('serverMSG', currentPlayer.name + ' just logged in as admin!');
-            currentPlayer.admin = true;
-        } else {
 
-            // TODO: Actually log incorrect passwords.
-            console.log('[ADMIN] ' + currentPlayer.name + ' attempted to log in with incorrect password.');
-            socket.emit('serverMSG', 'Password incorrect, attempt logged.');
-            //  pool.query('INSERT INTO logging SET name=' + currentPlayer.name + ', reason="Invalid login attempt as admin"');
-        }
-    });
-
-    socket.on('kick', function (data) {
-        if (currentPlayer.admin) {
-            var reason = '';
-            var worked = false;
-            for (var e = 0; e < users.length; e++) {
-                if (users[e].name === data[0] && !users[e].admin && !worked) {
-                    if (data.length > 1) {
-                        for (var f = 1; f < data.length; f++) {
-                            if (f === data.length) {
-                                reason = reason + data[f];
-                            } else {
-                                reason = reason + data[f] + ' ';
-                            }
-                        }
-                    }
-                    if (reason !== '') {
-                        console.log('[ADMIN] User ' + users[e].name + ' kicked successfully by ' + currentPlayer.name + ' for reason ' + reason);
-                    } else {
-                        console.log('[ADMIN] User ' + users[e].name + ' kicked successfully by ' + currentPlayer.name);
-                    }
-                    socket.emit('serverMSG', 'User ' + users[e].name + ' was kicked by ' + currentPlayer.name);
-                    sockets[users[e].id].emit('kick', reason);
-                    sockets[users[e].id].disconnect();
-                    users.splice(e, 1);
-                    worked = true;
-                }
-            }
-            if (!worked) {
-                socket.emit('serverMSG', 'Could not locate user or user is an admin.');
-            }
-        } else {
-            console.log('[ADMIN] ' + currentPlayer.name + ' is trying to use -kick but isn\'t an admin.');
-            socket.emit('serverMSG', 'You are not permitted to use this command.');
-        }
-    });
-
-    // Heartbeat function, update everytime.
+    // 更新方向，同时检测是否还在连接状态
     socket.on('0', function (target) {
         currentPlayer.lastHeartbeat = new Date().getTime();
         if (target.x !== currentPlayer.x || target.y !== currentPlayer.y) {
@@ -418,11 +358,14 @@ io.on('connection', function (socket) {
     });
 
     socket.on('1', function () {
-        // Fire food.
+        // 喷射食物
         for (var i = 0; i < currentPlayer.cells.length; i++) {
             if (currentPlayer.cells[i].mass >= config.defaultPlayerMass + config.fireFood && config.fireFood > 0 || currentPlayer.cells[i].mass >= 20 && config.fireFood === 0) {
                 var masa = 1;
-                if  (config.fireFood > 0) masa = config.fireFood;else masa = currentPlayer.cells[i].mass * 0.1;
+                if  (config.fireFood > 0)
+                    masa = config.fireFood;
+                else
+                    masa = currentPlayer.cells[i].mass * 0.1;
                 currentPlayer.cells[i].mass -= masa;
                 currentPlayer.massTotal -= masa;
                 massFood.push({
@@ -458,11 +401,12 @@ io.on('connection', function (socket) {
         }
 
         if (currentPlayer.cells.length < config.limitSplit && currentPlayer.massTotal >= config.defaultPlayerMass * 2) {
-            //Split single cell from virus
+
             if (virusCell) {
+                // 碰到刺球分裂
                 splitCell(currentPlayer.cells[virusCell]);
             } else {
-                //Split all cells
+                // 全部分裂
                 if (currentPlayer.cells.length < config.limitSplit && currentPlayer.massTotal >= config.defaultPlayerMass * 2) {
                     var numMax = currentPlayer.cells.length;
                     for (var d = 0; d < numMax; d++) {
@@ -477,7 +421,6 @@ io.on('connection', function (socket) {
 
 function tickPlayer(currentPlayer) {
     if (currentPlayer.lastHeartbeat < new Date().getTime() - config.maxHeartbeatInterval) {
-        sockets[currentPlayer.id].emit('kick', 'Last heartbeat received over ' + config.maxHeartbeatInterval + ' ago.');
         sockets[currentPlayer.id].disconnect();
     }
 
@@ -498,7 +441,7 @@ function tickPlayer(currentPlayer) {
             if (currentCell.mass > m.masa * 1.1) return true;
         }
         return false;
-    }
+}
 
     function check(user) {
         for (var i = 0; i < user.cells.length; i++) {
@@ -524,8 +467,7 @@ function tickPlayer(currentPlayer) {
 
     function collisionCheck(collision) {
         if (collision.aUser.mass > collision.bUser.mass * 1.1 && collision.aUser.radius > Math.sqrt(Math.pow(collision.aUser.x - collision.bUser.x, 2) + Math.pow(collision.aUser.y - collision.bUser.y, 2)) * 1.75) {
-            console.log('[DEBUG] Killing user: ' + collision.bUser.id);
-            console.log('[DEBUG] Collision info:');
+            console.log('吃掉 ' + collision.bUser.id);
             console.log(collision);
 
             var numUser = util.findIndex(users, collision.bUser.id);
@@ -589,7 +531,7 @@ function tickPlayer(currentPlayer) {
         users.forEach(tree.put);
         var playerCollisions = [];
 
-        var otherUsers = tree.get(currentPlayer, check);
+        tree.get(currentPlayer, check);
 
         playerCollisions.forEach(collisionCheck);
     }
@@ -645,9 +587,9 @@ function gameloop() {
     balanceMass();
 }
 
+//为每个用户返回在其视野中的物体
 function sendUpdates() {
     users.forEach(function (u) {
-        // center the view if x/y is undefined, this will happen for spectators
         u.x = u.x || config.gameWidth / 2;
         u.y = u.y || config.gameHeight / 2;
 
@@ -690,7 +632,6 @@ function sendUpdates() {
                             name: f.name
                         };
                     } else {
-                        //console.log("Nombre: " + f.name + " Es Usuario"  );
                         return {
                             x: f.x,
                             y: f.y,

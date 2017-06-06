@@ -4,10 +4,6 @@
 
 var cfg = require('../../config.json');
 
-exports.validNick = function (nickname) {
-    var regex = /^\w*$/;
-    return regex.exec(nickname) !== null;
-};
 
 // 根据质量确定半径
 exports.massToRadius = function (mass) {
@@ -22,7 +18,7 @@ exports.log = function () {
     };
 }();
 
-// get the Euclidean distance between the edges of two shapes
+// 计算距离
 exports.getDistance = function (p1, p2) {
     return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)) - p1.radius - p2.radius;
 };
@@ -31,7 +27,7 @@ exports.randomInRange = function (from, to) {
     return Math.floor(Math.random() * (to - from)) + from;
 };
 
-// generate a random position within the field of play
+// 随机产生一个位置
 exports.randomPosition = function (radius) {
     return {
         x: exports.randomInRange(radius, cfg.gameWidth - radius),
@@ -39,6 +35,7 @@ exports.randomPosition = function (radius) {
     };
 };
 
+// 随机产生十个位置，选择最远的一个
 exports.uniformPosition = function (points, radius) {
     var bestCandidate,
         maxDistance = 0;
@@ -48,7 +45,7 @@ exports.uniformPosition = function (points, radius) {
         return exports.randomPosition(radius);
     }
 
-    // Generate the cadidates
+
     for (var ci = 0; ci < numberOfCandidates; ci++) {
         var minDistance = Infinity;
         var candidate = exports.randomPosition(radius);
