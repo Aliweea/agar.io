@@ -39,15 +39,10 @@ function startGame(type) {
 
 
 window.onload = function() {
-
-    var btn = document.getElementById('startButton'),
-        nickErrorText = document.querySelector('#startMenu .input-error');
-
+    var btn = document.getElementById('startButton');
     btn.onclick = function () {
-        nickErrorText.style.opacity = 0;
         startGame('player');
     };
-
 };
 
 
@@ -117,7 +112,7 @@ function setupSocket(socket) {
         window.chat.player = player;
         socket.emit('gotit', player);
         global.gameStart = true;
-        window.chat.addSystemLine('Connected to the game!');
+        window.chat.addSystemLine('连接上了游戏！');
         //删除聊天板
         if (global.mobile) {
             document.getElementById('gameAreaWrapper').removeChild(document.getElementById('chatbox'));

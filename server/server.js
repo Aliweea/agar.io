@@ -64,10 +64,54 @@ var initMassLog = util.log(config.defaultPlayerMass, config.slowBase);
 
 app.use(express.static(__dirname + '/../client'));
 
+
+// 随机产生一个位置
+randomPosition = function (radius) {
+    return {
+        x: util.randomInRange(radius, config.gameWidth - radius),
+        y: util.randomInRange(radius, config.gameHeight - radius)
+    };
+};
+
+// 随机产生十个位置，选择最远的一个
+uniformPosition = function (points, radius) {
+    var bestCandidate,
+        maxDistance = 0;
+    var numberOfCandidates = 10;
+
+    if (points.length === 0) {
+        return randomPosition(radius);
+    }
+
+
+    for (var ci = 0; ci < numberOfCandidates; ci++) {
+        var minDistance = Infinity;
+        var candidate = randomPosition(radius);
+        candidate.radius = radius;
+
+        for (var pi = 0; pi < points.length; pi++) {
+            var distance = util.getDistance(candidate, points[pi]);
+            if (distance < minDistance) {
+                minDistance = distance;
+            }
+        }
+
+        if (minDistance > maxDistance) {
+            bestCandidate = candidate;
+            maxDistance = minDistance;
+        } else {
+            return randomPosition(radius);
+        }
+    }
+
+    return bestCandidate;
+};
+
+
 function addFood(toAdd) {
     var radius = util.massToRadius (config.foodMass);
     while (toAdd--) {
-        var position = config.foodUniformDisposition ? util.uniformPosition(food, radius) : util.randomPosition(radius);
+        var position = config.foodUniformDisposition ? uniformPosition(food, radius) : randomPosition(radius);
         food.push({
             // 设置唯一id
             id: new Date().getTime() + '' + food.length >>> 0,
@@ -84,7 +128,7 @@ function addVirus(toAdd) {
     while (toAdd--) {
         var mass = util.randomInRange(config.virus.defaultMass.from, config.virus.defaultMass.to, true);
         var radius = util.massToRadius(mass);
-        var position = config.virusUniformDisposition ? util.uniformPosition(virus, radius) : util.randomPosition(radius);
+        var position = config.virusUniformDisposition ? uniformPosition(virus, radius) : randomPosition(radius);
         virus.push({
             id: new Date().getTime() + '' + virus.length >>> 0,
             x: position.x,
@@ -247,7 +291,7 @@ io.on('connection', function (socket) {
 
     var type = socket.handshake.query.type;
     var radius = util.massToRadius (config.defaultPlayerMass);
-    var position = util.uniformPosition(users, radius);
+    var position = uniformPosition(users, radius);
 
     var cells = [];
     var massTotal = 0;
@@ -289,7 +333,7 @@ io.on('connection', function (socket) {
             sockets[player.id] = socket;
 
             var radius = util.massToRadius (config.defaultPlayerMass);
-            var position = util.uniformPosition(users, radius);
+            var position = uniformPosition(users, radius);
 
             player.x = position.x;
             player.y = position.y;

@@ -24,36 +24,29 @@ class ChatClient {
         global.chatClient = this;
     }
 
-
-    // Chat box implementation for the users.
     addChatLine(name, message, me) {
         if (this.mobile) {
             return;
         }
         var newline = document.createElement('li');
 
-        // Colours the chat input correctly.
         newline.className = (me) ? 'me' : 'friend';
         newline.innerHTML = '<b>' +  name + '</b>: ' + message;
 
         this.appendMessage(newline);
     }
 
-    // Chat box implementation for the system.
     addSystemLine(message) {
         if (this.mobile) {
             return;
         }
         var newline = document.createElement('li');
 
-        // Colours the chat input correctly.
         newline.className = 'system';
         newline.innerHTML = message;
-        // Append messages to the logs.
         this.appendMessage(newline);
     }
 
-    // Places the message DOM node into the chat box.
     appendMessage(node) {
         if (this.mobile) {
             return;
@@ -65,7 +58,6 @@ class ChatClient {
         chatList.appendChild(node);
     }
 
-    // Sends a message or executes a command on the click of enter.
     sendChat(key) {
         var input = document.getElementById('chatInput');
         key = key.which || key.keyCode;
