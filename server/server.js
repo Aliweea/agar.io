@@ -12,7 +12,7 @@ var SAT = require('sat');
 var config  = {
     host:  "0.0.0.0" ,
     port: 3000,
-    foodMass: 1,
+    foodMass: 8,
     fireFood: 20,
     limitSplit: 16,
     defaultPlayerMass: 10,
@@ -28,9 +28,9 @@ var config  = {
     },
     gameWidth: 5000,
     gameHeight: 5000,
-    gameMass: 20000,
+    gameMass: 8500,
     maxFood: 1000,
-    maxVirus: 50,
+    maxVirus: 30,
     slowBase: 4.5,
     logChat: 0,
     networkUpdateFactor: 40,
@@ -119,7 +119,8 @@ function addFood(toAdd) {
             y: position.y,
             radius: radius,
             mass: Math.random() + 2,
-            hue: Math.round(Math.random() * 360)
+            hue: Math.round(Math.random() * 360),
+            image: Math.floor(Math.random() * 3)
         });
     }
 }
@@ -319,7 +320,8 @@ io.on('connection', function (socket) {
         target: {
             x: 0,
             y: 0
-        }
+        },
+        image: Math.floor(Math.random() * 3)
     };
 
     socket.on('gotit', function (player) {
@@ -352,6 +354,7 @@ io.on('connection', function (socket) {
                 player.massTotal = 0;
             }
             player.hue = Math.round(Math.random() * 360);
+            player.image = Math.round(Math.random() * 3);
             currentPlayer = player;
             currentPlayer.lastHeartbeat = new Date().getTime();
             users.push(currentPlayer);
@@ -673,7 +676,8 @@ function sendUpdates() {
                             cells: f.cells,
                             massTotal: Math.round(f.massTotal),
                             hue: f.hue,
-                            name: f.name
+                            name: f.name,
+                            image: f.image
                         };
                     } else {
                         return {
@@ -681,7 +685,8 @@ function sendUpdates() {
                             y: f.y,
                             cells: f.cells,
                             massTotal: Math.round(f.massTotal),
-                            hue: f.hue
+                            hue: f.hue,
+                            image: f.image
                         };
                     }
                 }

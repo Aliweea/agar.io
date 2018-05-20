@@ -10,6 +10,18 @@ var global = require('./global');
 var playerNameInput = document.getElementById('playerNameInput');
 var socket;
 
+var cats_img = [new Image(),  new Image(),  new Image()];
+cats_img[0].src = '../img/cat1.jpg';
+cats_img[1].src = '../img/cat2.png';
+cats_img[2].src = '../img/cat3.png';
+
+var image = new Image();
+image.src = '../img/cat2.png';
+
+var food_img = [new Image(),  new Image(),  new Image()];
+food_img[0].src = '../img/ball.png';
+food_img[1].src = '../img/mouse.png';
+food_img[2].src = '../img/fish.png';
 
 // 配适移动端
 if ( /Android|iPhone/i.test(navigator.userAgent) ) {
@@ -178,6 +190,7 @@ function setupSocket(socket) {
             player.x = playerData.x;
             player.y = playerData.y;
             player.hue = playerData.hue;
+            player.image = playerData.image;
             player.massTotal = playerData.massTotal;
             player.cells = playerData.cells;
             player.xoffset = isNaN(xoffset) ? 0 : xoffset;
@@ -229,13 +242,45 @@ function drawCircle(centerX, centerY, radius, sides) {
     graph.fill();
 }
 
+
+function drawFoodCircle(centerX, centerY, radius, sides, image_index) {
+    if(image_index===1) {
+        graph.save();
+        graph.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        graph.clip();
+        graph.drawImage(food_img[image_index],centerX - radius,
+            centerY - radius, radius*2, radius*2);
+        graph.restore();
+    }
+    else {
+        var theta = 0;
+        var x = 0;
+        var y = 0;
+        graph.beginPath();
+
+        for (var i = 0; i < sides; i++) {
+            theta = (i / sides) * 2 * Math.PI;
+            x = centerX + radius * Math.sin(theta);
+            y = centerY + radius * Math.cos(theta);
+            graph.lineTo(x, y);
+        }
+        graph.closePath();
+        graph.stroke();
+        graph.fill();
+    }
+
+}
+
+
 function drawFood(food) {
     graph.strokeStyle = 'hsl(' + food.hue + ', 100%, 45%)';
     graph.fillStyle = 'hsl(' + food.hue + ', 100%, 50%)';
     graph.lineWidth = foodConfig.border;
-    drawCircle(food.x - player.x + global.screenWidth / 2,
+
+    drawFoodCircle(food.x - player.x + global.screenWidth / 2,
         food.y - player.y + global.screenHeight / 2,
-        food.radius, global.foodSides);
+        food.radius, global.foodSides, food.image);
+
 }
 
 function drawVirus(virus) {
@@ -324,13 +369,19 @@ function drawPlayers(order) {
         }
         graph.lineJoin = 'round';
         graph.lineCap = 'round';
-        graph.fill();
+        // graph.fill();
         graph.stroke();
         var nameCell = "";
         if(typeof(userCurrent.id) == "undefined")
             nameCell = player.name;
         else
             nameCell = userCurrent.name;
+
+        graph.save();
+        graph.arc(circle.x, circle.y, cellCurrent.radius, 0, 2 * Math.PI);
+        graph.clip();
+        graph.drawImage(cats_img[userCurrent.image], circle.x-cellCurrent.radius, circle.y-cellCurrent.radius, cellCurrent.radius*2, cellCurrent.radius*2);
+        graph.restore();
 
         var fontSize = Math.max(cellCurrent.radius / 3, 12);
         graph.lineWidth = playerConfig.textBorderSize;
